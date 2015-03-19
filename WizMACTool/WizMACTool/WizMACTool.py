@@ -15,6 +15,8 @@ import os
 
 import wx
 import wx.xrc
+from dns.rdatatype import NULL
+from __builtin__ import str
 
 ###########################################################################
 ## Class WIZnetMACTool
@@ -25,6 +27,8 @@ class WIZnetMACTool ( wx.Frame ):
         wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 646,435 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
         
         self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+        self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
+        self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DLIGHT ) )
         
         bSizer_root = wx.BoxSizer( wx.VERTICAL )
         
@@ -66,22 +70,26 @@ class WIZnetMACTool ( wx.Frame ):
         self.m_textCtrl_mac_addr = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer2.Add( self.m_textCtrl_mac_addr, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
-        self.m_staticText_StartHeader = wx.StaticText( self, wx.ID_ANY, u"Start Header", wx.DefaultPosition, wx.DefaultSize, 0 )
-        self.m_staticText_StartHeader.Wrap( -1 )
-        bSizer2.Add( self.m_staticText_StartHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        self.m_staticText_ReqHeader = wx.StaticText( self, wx.ID_ANY, u"Request", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText_ReqHeader.Wrap( -1 )
+        bSizer2.Add( self.m_staticText_ReqHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
-        self.m_textCtrl_StartHeader = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer2.Add( self.m_textCtrl_StartHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        self.m_textCtrl_ReqHeader = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer2.Add( self.m_textCtrl_ReqHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
-        self.m_staticText_EndHeader = wx.StaticText( self, wx.ID_ANY, u"End Heaer", wx.DefaultPosition, wx.DefaultSize, 0 )
-        self.m_staticText_EndHeader.Wrap( -1 )
-        bSizer2.Add( self.m_staticText_EndHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        self.m_staticText_RespHeader = wx.StaticText( self, wx.ID_ANY, u"Response", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText_RespHeader.Wrap( -1 )
+        bSizer2.Add( self.m_staticText_RespHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
-        self.m_textCtrl_EndHeader = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer2.Add( self.m_textCtrl_EndHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        self.m_textCtrl_RespHeader = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer2.Add( self.m_textCtrl_RespHeader, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
-        self.m_button_writeMAC = wx.Button( self, wx.ID_ANY, u"Write MAC", wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer2.Add( self.m_button_writeMAC, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        self.m_staticText_commandTail = wx.StaticText( self, wx.ID_ANY, u"Tail", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText_commandTail.Wrap( -1 )
+        bSizer2.Add( self.m_staticText_commandTail, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        self.m_textCtrl_commandTail = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer2.Add( self.m_textCtrl_commandTail, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
         
         bSizer_root.Add( bSizer2, 0, wx.EXPAND, 5 )
@@ -95,8 +103,11 @@ class WIZnetMACTool ( wx.Frame ):
         self.m_checkBox_mac_type2 = wx.CheckBox( self, wx.ID_ANY, u"Type2 : 0008DC000000", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer6.Add( self.m_checkBox_mac_type2, 0, wx.ALL, 5 )
         
+        self.m_button_writeMAC = wx.Button( self, wx.ID_ANY, u"Write MAC", wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer6.Add( self.m_button_writeMAC, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
-        bSizer_root.Add( bSizer6, 0, 0, 5 )
+        
+        bSizer_root.Add( bSizer6, 0, wx.EXPAND, 5 )
         
         bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
         
@@ -120,45 +131,59 @@ class WIZnetMACTool ( wx.Frame ):
         
         self.SetSizer( bSizer_root )
         self.Layout()
+        self.m_menubar1 = wx.MenuBar( 0 )
+        self.file = wx.Menu()
+        self.m_menuItem_save = wx.MenuItem( self.file, wx.ID_ANY, u"Save_Config", wx.EmptyString, wx.ITEM_NORMAL )
+        self.file.AppendItem( self.m_menuItem_save )
+        
+        self.m_menubar1.Append( self.file, u"File" ) 
+        
+        self.SetMenuBar( self.m_menubar1 )
+        
         
         self.Centre( wx.BOTH )
         
         # Connect Events
-        self.Bind( wx.EVT_ACTIVATE, self.StartApp )
         self.m_comboBox_serialCOM.Bind( wx.EVT_LEFT_DOWN, self.onSerialPort )
         self.m_button_SerialConnect.Bind( wx.EVT_BUTTON, self.onSerialConnect )
         self.m_button_SerialClose.Bind( wx.EVT_BUTTON, self.onSerialClose )
-        self.m_button_writeMAC.Bind( wx.EVT_BUTTON, self.onWriteMAC )
         self.m_checkBox_mac_type1.Bind( wx.EVT_CHECKBOX, self.onCheckBox_Type1 )
         self.m_checkBox_mac_type2.Bind( wx.EVT_CHECKBOX, self.onCheckBox_Type2 )
+        self.m_button_writeMAC.Bind( wx.EVT_BUTTON, self.onWriteMAC )
         self.m_button_SendSerial.Bind( wx.EVT_BUTTON, self.onSerialSend )
+        self.Bind( wx.EVT_MENU, self.onSaveMenu, id = self.m_menuItem_save.GetId() )
 
         # User
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.SerialMonitoring, self.timer)
     
-    def __del__( self ):
-        pass
-    
-    
-    # Virtual event handlers, overide them in your derived class
-    def StartApp( self, event ):
         self.GetComPortList()
 
         if os.path.isfile("config.ini"):
             f = open("config.ini","r")
             while True:
                 str_config = f.readline()
+                if len(str_config) == 0:
+                    f.close()
+                    wx.MessageBox("File information is wrong", 'Warning',wx.OK | wx.ICON_ERROR)
+                    return
+
                 if str_config[0] != '#':
                     break
+
             f.close()
         else:
             f = open("config.ini","w")
-            f.write("# MAC_ADDRESS,BAUD_RATE,START_HEADER,END_HEADER\r\n")
-            str_config = "00:08:DC:00:00:00,57600,MC,,"
+            f.write("# MAC_ADDRESS,BAUD_RATE,REQUEST_HEADER,RESPONSE_HEADER,TAIL_COMMAND\r\n")
+            str_config = "0008DC000000,115200,S,R,,"
             f.write(str_config)
             f.close()
         
+        if str_config.count(',') != 5:
+            print str_config
+            wx.MessageBox("File information is wrong(Count of Seperate)", 'Warning',wx.OK | wx.ICON_ERROR)
+            return
+
         mac_addr = str_config.split(',')[0]
         if mac_addr.count(':') == 5:
             self.m_checkBox_mac_type1.SetValue(True)
@@ -169,12 +194,24 @@ class WIZnetMACTool ( wx.Frame ):
         else:
             wx.MessageBox("File information is wrong", 'Warning',wx.OK | wx.ICON_ERROR)
             return
-            
+
         self.m_textCtrl_mac_addr.SetValue(str_config.split(',')[0])
         self.m_comboBox_baudrate.SetValue(str_config.split(',')[1])
-        self.m_textCtrl_StartHeader.SetValue(str_config.split(',')[2])
-        self.m_textCtrl_EndHeader.SetValue(str_config.split(',')[3])
+        self.m_textCtrl_ReqHeader.SetValue(str_config.split(',')[2])
+        self.m_textCtrl_RespHeader.SetValue(str_config.split(',')[3])
+        self.m_textCtrl_commandTail.SetValue(str_config.split(',')[4])
         
+        self.m_serialIsOpen = False
+        self.m_button_SendSerial.Disable()
+
+    
+    
+    def __del__( self ):
+        if self.m_serialIsOpen == True:
+            self.ser.close();
+    
+    
+    # Virtual event handlers, overide them in your derived class
     def onSerialPort( self, event ):
         self.GetComPortList()
     
@@ -207,22 +244,46 @@ class WIZnetMACTool ( wx.Frame ):
     
 
     def onWriteMAC( self, event ):
-        command = self.m_textCtrl_StartHeader.GetValue()
-        command += self.m_textCtrl_mac_addr.GetValue()
-        command += "\r\n\r\n"
+        self.timer.Stop()
+        str_resp = ""
+
+        #Send Request Header
+        command = self.m_textCtrl_ReqHeader.GetValue()
         self.ser.write(command)
+
+        #Receive response header and Compare with wanted response header
+        wanted_resp = self.m_textCtrl_RespHeader.GetValue()
+        if len(wanted_resp) != 0:
+            str_resp += self.ser.read()
+
+        self.m_textCtrl_SerialMonitor.AppendText(str_resp)            
+        if str_resp != wanted_resp:
+            wx.MessageBox("Protocol Error", 'Warning',wx.OK | wx.ICON_ERROR)
+            return
         
-        if self.m_checkBox_mac_type1.IsChecked():
+
+        #Send MAC Address
+        command = self.m_textCtrl_mac_addr.GetValue()
+        #If tail is existed, Send tail as 0x0d,0x0a
+        command += self.m_textCtrl_commandTail.GetValue()
+        self.ser.write(command)
+        self.timer.Start(500)
+
+        #Increase MAC address        
+        if self.m_checkBox_mac_type1.IsChecked():   #00:08:DC:00:00:00 format
             mac = self.m_textCtrl_mac_addr.GetValue()
             r = int(mac.replace(':',''),16) + 1
             mac = '{:X}'.format(r).zfill(12)
             self.m_textCtrl_mac_addr.SetValue(":".join(x+y for x,y in zip(mac[::2],mac[1::2])))
-        else:
+        else:                                       #0008DC000000 format
             mac = self.m_textCtrl_mac_addr.GetValue()
             r = int(mac.replace(':',''),16) + 1
             mac = '{:X}'.format(r).zfill(12)
             self.m_textCtrl_mac_addr.SetValue(mac)
-
+        
+        self.SaveConfigFile()
+            
+            
     def onCheckBox_Type1( self, event ):
         mac = self.m_textCtrl_mac_addr.GetValue()
         self.m_textCtrl_mac_addr.SetValue(":".join(x+y for x,y in zip(mac[::2],mac[1::2])))
@@ -238,7 +299,20 @@ class WIZnetMACTool ( wx.Frame ):
         self.ser.write(cmd)
 
     def SerialMonitoring(self,event):
-        self.m_textCtrl_SerialMonitor.AppendText(self.ser.readall().decode('utf-8'))
+        try:
+            if self.ser.readable():
+                str = self.ser.readall()
+                if len(str) == 0:
+                    return
+                
+                self.m_textCtrl_SerialMonitor.AppendText(str)
+                self.ser.flush()
+        except:
+            self.timer.Stop()
+            self.ser.close()
+            self.m_button_SerialConnect.Enable()
+            self.m_button_SerialClose.Disable()
+            self.m_serialIsOpen = False
         
     def GetComPortList(self):
         comboBox_serial_portChoices = []
@@ -249,6 +323,18 @@ class WIZnetMACTool ( wx.Frame ):
                 comboBox_serial_portChoices.append(self.port[0])
                  
         self.m_comboBox_serialCOM.SetItems(comboBox_serial_portChoices)
+        
+    def onSaveMenu( self, event ):
+        self.SaveConfigFile()
+        
+    def SaveConfigFile(self):
+        f = open("config.ini","w")
+        f.write("# MAC_ADDRESS,BAUD_RATE,REQUEST_HEADER,RESPONSE_HEADER,TAIL_COMMAND\r\n")
+        data  = self.m_textCtrl_mac_addr.GetValue() + ","  + self.m_comboBox_baudrate.GetValue() + "," 
+        data += self.m_textCtrl_ReqHeader.GetValue() + "," + self.m_textCtrl_RespHeader.GetValue() + "," 
+        data += self.m_textCtrl_commandTail.GetValue() + ","
+        f.write(data)
+        f.close()
 
 
 if __name__ == "__main__":
