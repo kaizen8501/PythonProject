@@ -12,11 +12,11 @@ import serial.tools.list_ports
 import time
 import threading
 import os
+import binascii
+
 
 import wx
 import wx.xrc
-from dns.rdatatype import NULL
-from __builtin__ import str
 
 ###########################################################################
 ## Class WIZnetMACTool
@@ -24,7 +24,7 @@ from __builtin__ import str
 class WIZnetMACTool ( wx.Frame ):
     
     def __init__( self, parent ):
-        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 646,435 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"WIZnetMACTool", pos = wx.DefaultPosition, size = wx.Size( 646,435 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
         
         self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
         self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
@@ -68,7 +68,7 @@ class WIZnetMACTool ( wx.Frame ):
         bSizer2.Add( self.m_staticText_mac_addr, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
         self.m_textCtrl_mac_addr = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer2.Add( self.m_textCtrl_mac_addr, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        bSizer2.Add( self.m_textCtrl_mac_addr, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
         self.m_staticText_ReqHeader = wx.StaticText( self, wx.ID_ANY, u"Request", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText_ReqHeader.Wrap( -1 )
@@ -153,6 +153,7 @@ class WIZnetMACTool ( wx.Frame ):
         self.m_button_SendSerial.Bind( wx.EVT_BUTTON, self.onSerialSend )
         self.Bind( wx.EVT_MENU, self.onSaveMenu, id = self.m_menuItem_save.GetId() )
 
+        
         # User
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.SerialMonitoring, self.timer)
@@ -232,7 +233,7 @@ class WIZnetMACTool ( wx.Frame ):
         self.m_button_SerialClose.Enable()
         self.m_serialIsOpen = True
         
-        self.timer.Start(500)
+        self.timer.Start(1000)
         
 
     def onSerialClose( self, event ):
@@ -249,7 +250,7 @@ class WIZnetMACTool ( wx.Frame ):
 
         #Send Request Header
         command = self.m_textCtrl_ReqHeader.GetValue()
-        self.ser.write(command)
+        self.ser.write(str(command))
 
         #Receive response header and Compare with wanted response header
         wanted_resp = self.m_textCtrl_RespHeader.GetValue()
@@ -261,13 +262,13 @@ class WIZnetMACTool ( wx.Frame ):
             wx.MessageBox("Protocol Error", 'Warning',wx.OK | wx.ICON_ERROR)
             return
         
-
         #Send MAC Address
         command = self.m_textCtrl_mac_addr.GetValue()
         #If tail is existed, Send tail as 0x0d,0x0a
-        command += self.m_textCtrl_commandTail.GetValue()
-        self.ser.write(command)
-        self.timer.Start(500)
+        #command += self.m_textCtrl_commandTail.GetValue()
+        command += binascii.a2b_hex(self.m_textCtrl_commandTail.GetValue())
+        self.ser.write(str(command))
+        self.timer.Start(1000)
 
         #Increase MAC address        
         if self.m_checkBox_mac_type1.IsChecked():   #00:08:DC:00:00:00 format
@@ -296,7 +297,7 @@ class WIZnetMACTool ( wx.Frame ):
 
     def onSerialSend( self, event ):
         cmd = self.m_textCtrl_SerialInput.GetValue()
-        self.ser.write(cmd)
+        self.ser.write(str(cmd))
 
     def SerialMonitoring(self,event):
         try:

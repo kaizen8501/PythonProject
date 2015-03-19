@@ -9,7 +9,10 @@ sys.path.append("D:\Program Files\Microsoft Visual Studio 10.0\VC\redist\x86\Mic
 
 setup(
 	options = {'py2exe':{'bundle_files':1}},
-	windows = [{'script':'WizMACTool.py'}],
+	windows = [{
+				'script':'WizMACTool.py',
+				"icon_resources": [(1,"images/WizMACTool.ico")],
+				}],
 	zipfile = None,
 )
 
