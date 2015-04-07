@@ -94,17 +94,30 @@ class WIZnetMACTool ( wx.Frame ):
         
         bSizer_root.Add( bSizer2, 0, wx.EXPAND, 5 )
         
-        bSizer6 = wx.BoxSizer( wx.HORIZONTAL )
+        bSizer6 = wx.BoxSizer( wx.VERTICAL )
+        
+        bSizer7 = wx.BoxSizer( wx.HORIZONTAL )
         
         self.m_checkBox_mac_type1 = wx.CheckBox( self, wx.ID_ANY, u"Type1 : 00:08:DC:00:00:00", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_checkBox_mac_type1.SetValue(True) 
-        bSizer6.Add( self.m_checkBox_mac_type1, 0, wx.ALL, 5 )
+        bSizer7.Add( self.m_checkBox_mac_type1, 0, wx.ALL, 5 )
         
         self.m_checkBox_mac_type2 = wx.CheckBox( self, wx.ID_ANY, u"Type2 : 0008DC000000", wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer6.Add( self.m_checkBox_mac_type2, 0, wx.ALL, 5 )
+        bSizer7.Add( self.m_checkBox_mac_type2, 0, wx.ALL, 5 )
         
         self.m_button_writeMAC = wx.Button( self, wx.ID_ANY, u"Write MAC", wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer6.Add( self.m_button_writeMAC, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        bSizer7.Add( self.m_button_writeMAC, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        
+        bSizer6.Add( bSizer7, 1, wx.EXPAND, 5 )
+        
+        bSizer8 = wx.BoxSizer( wx.HORIZONTAL )
+        
+        self.m_checkBox_rewrite_WIZ107SR_MAC = wx.CheckBox( self, wx.ID_ANY, u"For ReWriting WIZ107SR MAC", wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer8.Add( self.m_checkBox_rewrite_WIZ107SR_MAC, 0, wx.ALL, 5 )
+        
+        
+        bSizer6.Add( bSizer8, 1, wx.EXPAND, 5 )
         
         
         bSizer_root.Add( bSizer6, 0, wx.EXPAND, 5 )
@@ -150,6 +163,7 @@ class WIZnetMACTool ( wx.Frame ):
         self.m_checkBox_mac_type1.Bind( wx.EVT_CHECKBOX, self.onCheckBox_Type1 )
         self.m_checkBox_mac_type2.Bind( wx.EVT_CHECKBOX, self.onCheckBox_Type2 )
         self.m_button_writeMAC.Bind( wx.EVT_BUTTON, self.onWriteMAC )
+        self.m_checkBox_rewrite_WIZ107SR_MAC.Bind( wx.EVT_CHECKBOX, self.onReWriteWIZ107SR_MAC )
         self.m_button_SendSerial.Bind( wx.EVT_BUTTON, self.onSerialSend )
         self.Bind( wx.EVT_MENU, self.onSaveMenu, id = self.m_menuItem_save.GetId() )
 
@@ -204,8 +218,7 @@ class WIZnetMACTool ( wx.Frame ):
         
         self.m_serialIsOpen = False
         self.m_button_SendSerial.Disable()
-
-    
+        
     
     def __del__( self ):
         if self.m_serialIsOpen == True:
@@ -246,28 +259,12 @@ class WIZnetMACTool ( wx.Frame ):
 
     def onWriteMAC( self, event ):
         self.timer.Stop()
-        str_resp = ""
 
-        #Send Request Header
-        command = self.m_textCtrl_ReqHeader.GetValue()
-        self.ser.write(str(command))
+        if self.m_checkBox_rewrite_WIZ107SR_MAC:
+            self.ReWrite_WIZ107SR_MAC()
+        else:
+            self.Write_MAC()
 
-        #Receive response header and Compare with wanted response header
-        wanted_resp = self.m_textCtrl_RespHeader.GetValue()
-        if len(wanted_resp) != 0:
-            str_resp += self.ser.read()
-
-        self.m_textCtrl_SerialMonitor.AppendText(str_resp)            
-        if str_resp != wanted_resp:
-            wx.MessageBox("Protocol Error", 'Warning',wx.OK | wx.ICON_ERROR)
-            return
-        
-        #Send MAC Address
-        command = self.m_textCtrl_mac_addr.GetValue()
-        #If tail is existed, Send tail as 0x0d,0x0a
-        #command += self.m_textCtrl_commandTail.GetValue()
-        command += binascii.a2b_hex(self.m_textCtrl_commandTail.GetValue())
-        self.ser.write(str(command))
         self.timer.Start(1000)
 
         #Increase MAC address        
@@ -288,13 +285,35 @@ class WIZnetMACTool ( wx.Frame ):
     def onCheckBox_Type1( self, event ):
         mac = self.m_textCtrl_mac_addr.GetValue()
         self.m_textCtrl_mac_addr.SetValue(":".join(x+y for x,y in zip(mac[::2],mac[1::2])))
+        self.m_checkBox_mac_type1.SetValue(True)
         self.m_checkBox_mac_type2.SetValue(False)
     
     def onCheckBox_Type2( self, event ):
         mac = self.m_textCtrl_mac_addr.GetValue()
         self.m_textCtrl_mac_addr.SetValue(mac.replace(':',''))
         self.m_checkBox_mac_type1.SetValue(False)
+        self.m_checkBox_mac_type2.SetValue(True)
 
+    def onReWriteWIZ107SR_MAC( self, event ):
+        if self.m_checkBox_rewrite_WIZ107SR_MAC.IsChecked():
+            self.m_checkBox_mac_type1.Disable()
+            self.m_checkBox_mac_type2.Disable()
+            self.m_textCtrl_ReqHeader.Disable()
+            self.m_textCtrl_RespHeader.Disable()
+            self.m_textCtrl_commandTail.Disable()
+            
+            if self.m_checkBox_mac_type1.IsChecked():
+                return
+
+            self.onCheckBox_Type1(event)
+        else:
+            self.m_checkBox_mac_type1.Enable()
+            self.m_checkBox_mac_type2.Enable()
+            self.m_textCtrl_ReqHeader.Enable()
+            self.m_textCtrl_RespHeader.Enable()
+            self.m_textCtrl_commandTail.Enable()
+        
+            
     def onSerialSend( self, event ):
         cmd = self.m_textCtrl_SerialInput.GetValue()
         self.ser.write(str(cmd))
@@ -336,6 +355,63 @@ class WIZnetMACTool ( wx.Frame ):
         data += self.m_textCtrl_commandTail.GetValue() + ","
         f.write(data)
         f.close()
+        
+    def ReWrite_WIZ107SR_MAC(self):
+        str_resp = ""
+        message = ""
+        
+        str_resp = self.ser.readall()
+        
+        if str_resp.find("INPUT FIRST MAC?") != -1:
+            self.m_textCtrl_SerialMonitor.AppendText(str_resp)
+            command = "MC" + self.m_textCtrl_mac_addr.GetValue() +"\r\n"
+            self.ser.write(str(command))
+            str_resp = self.ser.readall()
+            self.m_textCtrl_SerialMonitor.AppendText(str_resp)
+            return True
+        
+        self.ser.write("\r\nMC\r\n")
+        str_resp = self.ser.readline()
+        
+        if str_resp[4] != ':' and str_resp[7] != ':' and str_resp[10] != ':' and str_resp[13] != ':':
+            message = "Protocol Error. It has to receive MCXX:XX:XX:XX:XX:XX:XX But It received " + str_resp
+            wx.MessageBox(message, 'Warning',wx.OK | wx.ICON_ERROR)
+            return False
+
+        self.ser.write("K!\r\n")
+        self.ser.write("wiznet\r\n")
+        
+        str_resp = self.ser.readall()
+        self.m_textCtrl_SerialMonitor.AppendText(str_resp)
+        command = "MC" + self.m_textCtrl_mac_addr.GetValue() +"\r\n"
+        self.ser.write(str(command))
+        return True
+
+    
+    def Write_MAC(self):
+        str_resp = ""
+
+        #Send Request Header
+        command = self.m_textCtrl_ReqHeader.GetValue()
+        self.ser.write(str(command))
+
+        #Receive response header and Compare with wanted response header
+        wanted_resp = self.m_textCtrl_RespHeader.GetValue()
+        if len(wanted_resp) != 0:
+            str_resp += self.ser.read()
+
+        self.m_textCtrl_SerialMonitor.AppendText(str_resp)            
+        if str_resp != wanted_resp:
+            wx.MessageBox("Protocol Error", 'Warning',wx.OK | wx.ICON_ERROR)
+            return
+        
+        #Send MAC Address
+        command = self.m_textCtrl_mac_addr.GetValue()
+        #If tail is existed, Send tail as 0x0d,0x0a
+        #command += self.m_textCtrl_commandTail.GetValue()
+        command += binascii.a2b_hex(self.m_textCtrl_commandTail.GetValue())
+        self.ser.write(str(command))
+
 
 
 if __name__ == "__main__":
