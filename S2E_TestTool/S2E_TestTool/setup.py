@@ -3,7 +3,7 @@ import py2exe, sys, os
 from glob import glob
 
 sys.argv.append('py2exe')
-sys.path.append("C:\Program Files (x86)\Common Files\microsoft shared\VSTO\10.0")
+#sys.path.append("C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VC100.CRT")
 
 
 setup(

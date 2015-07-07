@@ -14,97 +14,31 @@ import serial.tools.list_ports
 import os
 import threading
 import filecmp
+import wx.lib.newevent
+
+wxUnit1Recv, EVT_UNIT1_RECV = wx.lib.newevent.NewEvent()
+wxUnit2Recv, EVT_UNIT2_RECV = wx.lib.newevent.NewEvent()
 
 class Unit1RecvThread(threading.Thread):
-    def __init__(self, wxObject):
+    def __init__(self, parent):
         threading.Thread.__init__(self)
-        self.wxObject = wxObject
+        self._parent = parent
         self.start()
     
     def run(self):
-        self.wxObject.m_listBox_ResultUnit2.Append("Test Start\r\n")
-        
-        try:
-            send_file = open(self.wxObject.filename1,'rb')
-            recv_file = open(self.wxObject.m_Unit2_recv_filename,'wb')
-            
-            for i in xrange(0,self.wxObject.filename1_size,1024):
-                data = send_file.read(1024)
-                self.wxObject.m_Unit1_ser.write(data)
-                recv_data = self.wxObject.m_Unit2_ser.read(1024)
-                recv_file.write(recv_data)
-                self.wxObject.progressDialog1.Update(i)
-            
+        evt = wxUnit1Recv()
+        self._parent.GetEventHandler().ProcessEvent(evt)
 
-            send_file.close()
-            recv_file.close()
-            self.wxObject.progressDialog1.Destroy()
-
-            result = filecmp.cmp(self.wxObject.m_textCtrl_TestFile1.GetValue(), self.wxObject.m_Unit2_recv_filename)
-            message = "Received Data : %s\r\n" % str(os.stat(self.wxObject.m_Unit2_recv_filename).st_size)
-            self.wxObject.m_listBox_ResultUnit2.Append(message)
-            message = "Test Result(File Compare) : %s\r\n" % str(result)
-            self.wxObject.m_listBox_ResultUnit2.Append(message)
-            
-            if result == False:
-                wx.MessageBox("Test Fail", 'Warning',wx.OK | wx.ICON_ERROR)
-                return
-
-        except Exception as e:
-            s = str(e)
-            self.wxObject.m_listBox_ResultUnit2.Append(s)
-            send_file.close()
-            recv_file.close()
-            self.wxObject.progressDialog1.Destroy()
-            self.wxObject.onSerialClose1()            
-            self.wxObject.onSerialClose2()
-        
 
 class Unit2RecvThread(threading.Thread):
-    def __init__(self, wxObject):
+    def __init__(self, parent):
         threading.Thread.__init__(self)
-        self.wxObject = wxObject
+        self._parent = parent
         self.start()
 
     def run(self):
-        self.wxObject.m_listBox_ResultUnit1.Append("Test Start\r\n")
-        
-        try:
-            send_file = open(self.wxObject.filename2,'rb')
-            recv_file = open(self.wxObject.m_Unit1_recv_filename,'wb')
-            
-            for i in xrange(0,self.wxObject.filename2_size,1024):
-                data = send_file.read(1024)
-                self.wxObject.m_Unit2_ser.write(data)
-                recv_data = self.wxObject.m_Unit1_ser.read(1024)
-                recv_file.write(recv_data)
-                self.wxObject.progressDialog2.Update(i)
-            
-
-            send_file.close()
-            recv_file.close()
-            self.wxObject.progressDialog2.Destroy()
-
-            result = filecmp.cmp(self.wxObject.m_textCtrl_TestFile2.GetValue(), self.wxObject.m_Unit1_recv_filename)
-            message = "Received Data : %s\r\n" % str(os.stat(self.wxObject.m_Unit1_recv_filename).st_size)
-            self.wxObject.m_listBox_ResultUnit1.Append(message)
-            message = "Test Result(File Compare) : %s\r\n" % str(result)
-            self.wxObject.m_listBox_ResultUnit1.Append(message)
-            
-            if result == False:
-                wx.MessageBox("Test Fail", 'Warning',wx.OK | wx.ICON_ERROR)
-                return
-
-        except:
-            send_file.close()
-            recv_file.close()
-            self.wxObject.progressDialog2.Destroy()
-            self.wxObject.onSerialClose1()            
-            self.wxObject.onSerialClose2()    
-
-
-
-
+        evt = wxUnit2Recv()
+        self._parent.GetEventHandler().ProcessEvent(evt)
 
 
 ###########################################################################
@@ -284,18 +218,16 @@ class S2E_TestTool ( wx.Frame ):
         
         bSizer30 = wx.BoxSizer( wx.VERTICAL )
         
-        m_listBox_ResultUnit1Choices = []
-        self.m_listBox_ResultUnit1 = wx.ListBox( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox_ResultUnit1Choices, wx.LB_ALWAYS_SB )
-        bSizer30.Add( self.m_listBox_ResultUnit1, 1, wx.ALL|wx.EXPAND, 5 )
+        self.m_textCtrl_ResultUnit1 = wx.TextCtrl( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE )
+        bSizer30.Add( self.m_textCtrl_ResultUnit1, 1, wx.ALL|wx.EXPAND, 5 )
         
         
         sbSizer4.Add( bSizer30, 1, wx.EXPAND, 5 )
         
-        bSizer31 = wx.BoxSizer( wx.HORIZONTAL )
+        bSizer31 = wx.BoxSizer( wx.VERTICAL )
         
-        m_listBox_ResultUnit2Choices = []
-        self.m_listBox_ResultUnit2 = wx.ListBox( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox_ResultUnit2Choices, wx.LB_ALWAYS_SB )
-        bSizer31.Add( self.m_listBox_ResultUnit2, 1, wx.ALL|wx.EXPAND, 5 )
+        self.m_textCtrl_ResultUnit2 = wx.TextCtrl( sbSizer4.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE )
+        bSizer31.Add( self.m_textCtrl_ResultUnit2, 1, wx.ALL|wx.EXPAND, 5 )
         
         
         sbSizer4.Add( bSizer31, 1, wx.EXPAND, 5 )
@@ -321,10 +253,12 @@ class S2E_TestTool ( wx.Frame ):
         self.m_button_StartTest.Bind( wx.EVT_BUTTON, self.onStartTest )
         self.m_checkBox_Fullduplex.Bind( wx.EVT_CHECKBOX, self.onFullduplex )
         self.m_checkBox_Unit1toUnit2.Bind( wx.EVT_CHECKBOX, self.onUnit1toUnit2 )
-        self.m_checkBox_Unit2toUnit1.Bind( wx.EVT_CHECKBOX, self.onUnit2toUnit1 )
-        
+        self.m_checkBox_Unit2toUnit1.Bind( wx.EVT_CHECKBOX, self.onUnit2toUnit1 )        
 
         #User Code
+        self.Bind(EVT_UNIT1_RECV, self.Send_File_Unit1toUnit2)
+        self.Bind(EVT_UNIT2_RECV, self.Send_File_Unit2toUnit1)
+        
         self.GetComPortList(1)
         self.GetComPortList(2)
 
@@ -466,29 +400,11 @@ class S2E_TestTool ( wx.Frame ):
             self.m_button_StartTest.Disable()
 
     def onStartTest( self, event ):
-        self.filename1 = self.m_textCtrl_TestFile1.GetValue()
-        if self.filename1 == '':
-            return
-        
-        self.filename1_size = os.stat(self.filename1).st_size
-        self.progressDialog1 = wx.ProgressDialog('Send File','Unit1 send data to Unit2',self.filename1_size,
-                                           style = wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME )
-        
-        self.filename2 = self.m_textCtrl_TestFile2.GetValue()
-        if self.filename2 == '':
-            return
-        
-        self.filename2_size = os.stat(self.filename2).st_size
-        self.progressDialog2 = wx.ProgressDialog('Send File','Unit2 send data to Unit1',self.filename2_size,
-                                           style = wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME )
-        
         if self.m_checkBox_Unit1toUnit2.GetValue() == True:
             Unit1RecvThread(self)
-           
-        if self.m_checkBox_Unit2toUnit1.GetValue() == True:
+        elif self.m_checkBox_Unit2toUnit1.GetValue() == True:
             Unit2RecvThread(self)
-
-        if self.m_checkBox_Fullduplex.GetValue() == True:
+        elif self.m_checkBox_Fullduplex.GetValue() == True:
             Unit1RecvThread(self)
             Unit2RecvThread(self)
         
@@ -506,8 +422,107 @@ class S2E_TestTool ( wx.Frame ):
         self.m_checkBox_Unit2toUnit1.SetValue(True)
         self.m_checkBox_Unit1toUnit2.SetValue(False)
         self.m_checkBox_Fullduplex.SetValue(False)
+        
+    def Send_File_Unit1toUnit2(self, evnet):
+        self.filename1 = self.m_textCtrl_TestFile1.GetValue()
+        if self.filename1 == '':
+            return
+        
+        self.filename1_size = os.stat(self.filename1).st_size
+        self.unit2_recv_size = 0
+        
+        self.m_textCtrl_ResultUnit2.Clear()
+        self.m_textCtrl_ResultUnit2.AppendText("Test Start\r\n")
+        
+        try:
+            send_file = open(self.filename1,'rb')
+            recv_file = open(self.m_Unit2_recv_filename,'wb')
+            
+            for i in xrange(0,self.filename1_size,1024):
+                data = send_file.read(1024)
+                self.m_Unit1_ser.write(data)
+                recv_data = self.m_Unit2_ser.read(1024)
+                recv_file.write(recv_data)
+                
+                self.unit2_recv_size += len(recv_data)
+                temp_str = "Recv size : %d/%d\r\n" % (self.unit2_recv_size,self.filename1_size)
+                self.m_textCtrl_ResultUnit2.AppendText(temp_str)
+
+                #self.progressDialog1.Update(i)
+
+            send_file.close()
+            recv_file.close()
+            #self.progressDialog1.Destroy()
+
+            result = filecmp.cmp(self.m_textCtrl_TestFile1.GetValue(), self.m_Unit2_recv_filename)
+            message = "Received Data Length : %s\r\n" % str(os.stat(self.m_Unit2_recv_filename).st_size)
+            self.m_textCtrl_ResultUnit2.AppendText(message)
+            message = "Test Result(File Compare) : %s\r\n" % str(result)
+            self.m_textCtrl_ResultUnit2.AppendText(message)
+            
+            if result == False:
+                wx.MessageBox("Test Fail", 'Warning',wx.OK | wx.ICON_ERROR)
+                return
+
+        except Exception as e:
+            s = str(e)
+            self.m_textCtrl_ResultUnit2.AppendText(s)
+            send_file.close()
+            recv_file.close()
+            #self.progressDialog1.Destroy()
 
         
+    def Send_File_Unit2toUnit1(self, event ):
+        self.filename2 = self.m_textCtrl_TestFile2.GetValue()
+        if self.filename2 == '':
+            return
+        
+        self.filename2_size = os.stat(self.filename2).st_size
+        self.unit1_recv_size = 0
+        
+#         self.progressDialog2 = wx.ProgressDialog('Send File','Unit2 send data to Unit1',self.filename2_size,
+#                                            style = wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME )
+        
+        self.m_textCtrl_ResultUnit1.AppendText("Test Start\r\n")
+        
+        try:
+            send_file = open(self.filename2,'rb')
+            recv_file = open(self.m_Unit1_recv_filename,'wb')
+            
+            for i in xrange(0,self.filename2_size,1024):
+                data = send_file.read(1024)
+                self.m_Unit2_ser.write(data)
+                recv_data = self.m_Unit1_ser.read(1024)
+                recv_file.write(recv_data)
+                #self.progressDialog2.Update(i)
+
+                self.unit1_recv_size += len(recv_data)
+                temp_str = "Recv size : %d/%d\r\n" % (self.unit1_recv_size,self.filename2_size)
+                self.m_textCtrl_ResultUnit1.AppendText(temp_str)
+                
+
+            send_file.close()
+            recv_file.close()
+            #self.progressDialog2.Destroy()
+
+            result = filecmp.cmp(self.m_textCtrl_TestFile2.GetValue(), self.m_Unit1_recv_filename)
+            message = "Received Data Length : %s\r\n" % str(os.stat(self.m_Unit1_recv_filename).st_size)
+            self.m_textCtrl_ResultUnit1.AppendText(message)
+            message = "Test Result(File Compare) : %s\r\n" % str(result)
+            self.m_textCtrl_ResultUnit1.AppendText(message)
+            
+            if result == False:
+                wx.MessageBox("Test Fail", 'Warning',wx.OK | wx.ICON_ERROR)
+                return
+
+        except Exception as e:
+            s = str(e)
+            self.m_textCtrl_ResultUnit2.AppendText(s)
+            send_file.close()
+            recv_file.close()
+            #self.progressDialog2.Destroy()
+        
+
 if __name__ == "__main__":
     app = wx.App(0)
     s2e_test = S2E_TestTool(None)
