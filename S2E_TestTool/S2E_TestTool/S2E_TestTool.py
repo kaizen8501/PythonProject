@@ -90,7 +90,7 @@ class Unit2RecvThread(threading.Thread):
 class S2E_TestTool ( wx.Frame ):
     
     def __init__( self, parent ):
-        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"S2E Test Tool", pos = wx.DefaultPosition, size = wx.Size( 521,623 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"S2E Test Tool", pos = wx.DefaultPosition, size = wx.Size( 521,708 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
         
         self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
         self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
@@ -210,25 +210,50 @@ class S2E_TestTool ( wx.Frame ):
         
         sbSizer_SendOption.Add( bSizer16, 1, wx.EXPAND, 5 )
         
-        bSizer17 = wx.BoxSizer( wx.HORIZONTAL )
+        sbSizer6 = wx.StaticBoxSizer( wx.StaticBox( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, u"Using File" ), wx.HORIZONTAL )
         
-        self.m_staticText_Unit1_SendSize = wx.StaticText( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, u"Unit1 Send Size(Byte)", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText_ChunkSize = wx.StaticText( sbSizer6.GetStaticBox(), wx.ID_ANY, u"Chunk Size", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText_ChunkSize.Wrap( -1 )
+        sbSizer6.Add( self.m_staticText_ChunkSize, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        self.m_textCtrl_ChunkSize = wx.TextCtrl( sbSizer6.GetStaticBox(), wx.ID_ANY, u"1024", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_textCtrl_ChunkSize.SetMaxLength( 1024000 ) 
+        sbSizer6.Add( self.m_textCtrl_ChunkSize, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        self.m_staticText_SendDelay = wx.StaticText( sbSizer6.GetStaticBox(), wx.ID_ANY, u"Send Delay(ms)", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText_SendDelay.Wrap( -1 )
+        sbSizer6.Add( self.m_staticText_SendDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        self.m_textCtrl_SendDelay = wx.TextCtrl( sbSizer6.GetStaticBox(), wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+        sbSizer6.Add( self.m_textCtrl_SendDelay, 1, wx.ALL, 5 )
+        
+        
+        sbSizer_SendOption.Add( sbSizer6, 0, wx.EXPAND, 5 )
+        
+        sbSizer8 = wx.StaticBoxSizer( wx.StaticBox( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, u"Not Using File" ), wx.HORIZONTAL )
+        
+        self.m_staticText_Unit1_SendSize = wx.StaticText( sbSizer8.GetStaticBox(), wx.ID_ANY, u"Unit1 Send Size(Byte)", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText_Unit1_SendSize.Wrap( -1 )
-        bSizer17.Add( self.m_staticText_Unit1_SendSize, 1, wx.ALL, 5 )
+        sbSizer8.Add( self.m_staticText_Unit1_SendSize, 1, wx.ALL, 5 )
         
-        self.m_textCtrl_Unit1_SendSize = wx.TextCtrl( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_textCtrl_Unit1_SendSize = wx.TextCtrl( sbSizer8.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_textCtrl_Unit1_SendSize.Enable( False )
         
-        bSizer17.Add( self.m_textCtrl_Unit1_SendSize, 1, wx.ALL, 5 )
+        sbSizer8.Add( self.m_textCtrl_Unit1_SendSize, 1, wx.ALL, 5 )
         
-        self.m_staticText_Unit2_SendSize = wx.StaticText( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, u"Unit2 Send Size(Byte)", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText_Unit2_SendSize = wx.StaticText( sbSizer8.GetStaticBox(), wx.ID_ANY, u"Unit2 Send Size(Byte)", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText_Unit2_SendSize.Wrap( -1 )
-        bSizer17.Add( self.m_staticText_Unit2_SendSize, 1, wx.ALL, 5 )
+        sbSizer8.Add( self.m_staticText_Unit2_SendSize, 1, wx.ALL, 5 )
         
-        self.m_textCtrl_Unit2_SendSize = wx.TextCtrl( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_textCtrl_Unit2_SendSize = wx.TextCtrl( sbSizer8.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_textCtrl_Unit2_SendSize.Enable( False )
         
-        bSizer17.Add( self.m_textCtrl_Unit2_SendSize, 1, wx.ALL, 5 )
+        sbSizer8.Add( self.m_textCtrl_Unit2_SendSize, 1, wx.ALL, 5 )
+        
+        
+        sbSizer_SendOption.Add( sbSizer8, 0, wx.EXPAND, 5 )
+        
+        bSizer17 = wx.BoxSizer( wx.HORIZONTAL )
         
         
         sbSizer_SendOption.Add( bSizer17, 1, wx.EXPAND, 5 )
@@ -337,8 +362,8 @@ class S2E_TestTool ( wx.Frame ):
         self.m_button_StartTest.Bind( wx.EVT_BUTTON, self.onStartTest )
         self.m_checkBox_Fullduplex.Bind( wx.EVT_CHECKBOX, self.onFullduplex )
         self.m_checkBox_Unit1toUnit2.Bind( wx.EVT_CHECKBOX, self.onUnit1toUnit2 )
-        self.m_checkBox_Unit2toUnit1.Bind( wx.EVT_CHECKBOX, self.onUnit2toUnit1 )        
-
+        self.m_checkBox_Unit2toUnit1.Bind( wx.EVT_CHECKBOX, self.onUnit2toUnit1 )
+        
         
         #User Code
         self.Bind(EVT_UNIT1_SEND, self.Send_DataUnit1toUnit2)
@@ -450,6 +475,9 @@ class S2E_TestTool ( wx.Frame ):
         self.m_textCtrl_Unit1_SendSize.Disable()
         self.m_textCtrl_Unit2_SendSize.Disable()
         self.m_button_StartTest.Disable()
+        self.m_textCtrl_ChunkSize.Enable()
+        self.m_textCtrl_SendDelay.Enable()
+        
         
     def onNotUsingFile( self, event ):
         self.m_checkBox_usingFile.SetValue(False)
@@ -460,6 +488,9 @@ class S2E_TestTool ( wx.Frame ):
         self.m_textCtrl_Unit1_SendSize.Enable()
         self.m_textCtrl_Unit2_SendSize.Enable()
         self.m_button_StartTest.Enable()
+        self.m_textCtrl_ChunkSize.Disable()
+        self.m_textCtrl_SendDelay.Disable()
+        
             
     def onBrowse1( self, event ):
         if self.m_Unit1_ser_IsOpen == False and self.m_Unit2_ser_IsOpen == False:
@@ -518,16 +549,13 @@ class S2E_TestTool ( wx.Frame ):
         
         if self.m_checkBox_Unit1toUnit2.GetValue() == True:
             Unit2RecvThread(self)            
-            time.sleep(0.1)
             Unit1SendThread(self)
         elif self.m_checkBox_Unit2toUnit1.GetValue() == True:
             Unit1RecvThread(self)            
-            time.sleep(0.1)
             Unit2SendThread(self)
         elif self.m_checkBox_Fullduplex.GetValue() == True:
             Unit1RecvThread(self)            
             Unit1SendThread(self)
-
             Unit2RecvThread(self)            
             Unit2SendThread(self)
             
@@ -552,45 +580,48 @@ class S2E_TestTool ( wx.Frame ):
         end_cnt = 0
         
         self.m_unit1_recv_size = 0
+        recv_file_data = ""
         self.m_textCtrl_ResultUnit1.Clear()
 
 
         if self.m_checkBox_NotUsingFile.GetValue() == True:
             while True:
-                recv_data = self.m_Unit1_ser.read()
+                recv_data = self.m_Unit1_ser.read(1024)
                 if len(recv_data) > 0:
                     end_cnt = 0
                     self.m_unit1_recv_size += len(recv_data)
                      
-                    if self.m_unit1_recv_size % 1024 == 0 and self.m_unit1_recv_size != 0:
-                        temp_str = "Recv size : %d/%d\r\n" % (self.m_unit1_recv_size,self.m_Unit2_Send_Size)
-                        self.m_textCtrl_ResultUnit1.AppendText(temp_str)
+                    temp_str = "Recv size : %d/%d\r\n" % (self.m_unit1_recv_size,self.m_Unit2_Send_Size)
+                    self.m_textCtrl_ResultUnit1.AppendText(temp_str)
                 else:
-                    time.sleep(0.001)
+                    time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 1500:
+                    if end_cnt >= 100000:
                         self.m_recv1_finish = True
                         break
         
         elif self.m_checkBox_usingFile.GetValue() == True:
-            recv_file = open(self.m_Unit1_recv_filename,"wb")
             while True:
                 recv_data = self.m_Unit1_ser.read(1024)
                 if len(recv_data) > 0:
                     end_cnt = 0
-                    recv_file.write(recv_data)
                     lock.acquire()
                     self.m_unit1_recv_size += len(recv_data)
-                    lock.release()
+                    recv_file_data += recv_data
 
                     temp_str = "Recv size : %d/%d\r\n" % (self.m_unit1_recv_size,self.filename2_size)
                     self.m_textCtrl_ResultUnit1.AppendText(temp_str)
+                    lock.release()
                 else:
-                    time.sleep(0.001)
+                    time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 1500:
+                    if end_cnt >= 100000:
                         self.m_recv1_finish = True
                         break
+            
+            recv_file = open(self.m_Unit1_recv_filename,"wb")
+            recv_file.write(recv_file_data)
+
             
             recv_file.close()
             result = filecmp.cmp(self.m_textCtrl_TestFile2.GetValue(),self.m_Unit1_recv_filename)
@@ -607,48 +638,50 @@ class S2E_TestTool ( wx.Frame ):
     def Recv_DataUnit2(self, event):
         end_cnt = 0
         self.m_unit2_recv_size = 0
+        recv_file_data = ""
         self.m_textCtrl_ResultUnit2.Clear()
 
         if self.m_checkBox_NotUsingFile.GetValue() == True:
             while True:
-                recv_data = self.m_Unit2_ser.read()
+                recv_data = self.m_Unit2_ser.read(1024)
                 if len(recv_data) > 0:
                     end_cnt = 0
                     lock.acquire()
                     self.m_unit2_recv_size += len(recv_data)
-                    lock.release()
                     
-                    if self.m_unit2_recv_size % 1024 == 0 and self.m_unit2_recv_size != 0:
-                        temp_str = "Recv size : %d/%d\r\n" % (self.m_unit2_recv_size,self.m_Unit1_Send_Size)
-                        self.m_textCtrl_ResultUnit2.AppendText(temp_str)
+                    temp_str = "Recv size : %d/%d\r\n" % (self.m_unit2_recv_size,self.m_Unit1_Send_Size)
+                    self.m_textCtrl_ResultUnit2.AppendText(temp_str)
+                    lock.release()
                 else:
-                    time.sleep(0.001)
+                    time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 1500:
+                    if end_cnt >= 100000:
                         self.m_recv2_finish = True
                         break
 
         elif self.m_checkBox_usingFile.GetValue() == True:
-            recv_file = open(self.m_Unit2_recv_filename,"wb")
             while True:
                 recv_data = self.m_Unit2_ser.read(1024)
                 if len(recv_data) > 0:
                     end_cnt = 0
-                    recv_file.write(recv_data)
                     lock.acquire()
                     self.m_unit2_recv_size += len(recv_data)
-                    lock.release()
+                    recv_file_data += recv_data
 
                     temp_str = "Recv size : %d/%d\r\n" % (self.m_unit2_recv_size,self.filename1_size)
                     self.m_textCtrl_ResultUnit2.AppendText(temp_str)
+                    lock.release()
                 else:
-                    time.sleep(0.001)
+                    time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 1500:
+                    if end_cnt >= 100000:
                         self.m_recv2_finish = True
                         break
 
+            recv_file = open(self.m_Unit2_recv_filename,"wb")
+            recv_file.write(recv_file_data)
             recv_file.close()
+
             result = filecmp.cmp(self.m_textCtrl_TestFile1.GetValue(),self.m_Unit2_recv_filename)
             message = "Test Result(File Compare) : %s\r\n" % str(result)
             self.m_textCtrl_ResultUnit2.AppendText(message)
@@ -693,9 +726,7 @@ class S2E_TestTool ( wx.Frame ):
             
         except Exception as e:
             s = str(e)
-            lock.acquire()
-            self.m_textCtrl_ResultUnit2.AppendText(s)
-            lock.release()
+            wx.MessageBox(s, 'Warning',wx.OK | wx.ICON_ERROR)
 
     def Send_Ascii_Unit2toUnit1(self):
         send_data = 'A'
@@ -718,10 +749,7 @@ class S2E_TestTool ( wx.Frame ):
             
         except Exception as e:
             s = str(e)
-            lock.acquire()
-            self.m_textCtrl_ResultUnit1.AppendText(s)
-            lock.release()
-
+            wx.MessageBox(s, 'Warning',wx.OK | wx.ICON_ERROR)
 
     
     def Send_File_Unit1toUnit2(self):
@@ -730,26 +758,26 @@ class S2E_TestTool ( wx.Frame ):
             return
         
         self.filename1_size = os.stat(self.filename1).st_size
+
+        file_data = ""
+        send_file = open(self.filename1,'rb')
+        for i in xrange(0,self.filename1_size,1024):
+            data = send_file.read(1024)
+            file_data += data
+        send_file.close()
         
         try:
-            send_file = open(self.filename1,'rb')
-            
-#             for i in range(self.filename1_size):
-#                 data = send_file.read()
-#                 self.m_Unit1_ser.write(data)
-            for i in xrange(0,self.filename1_size,1024):
-                data = send_file.read(1024)
+            chunk_size = int(self.m_textCtrl_ChunkSize.GetValue())
+            send_delay = int(self.m_textCtrl_SendDelay.GetValue())/1000
+            for i in xrange(0,self.filename1_size,chunk_size):
+                data = file_data[i:i+chunk_size]
                 self.m_Unit1_ser.write(data)
-
-            send_file.close()
-
+                time.sleep(send_delay)
+                
         except Exception as e:
             s = str(e)
-            lock.acquire()
-            self.m_textCtrl_ResultUnit2.AppendText(s)
-            lock.release()
+            wx.MessageBox(s, 'Warning',wx.OK | wx.ICON_ERROR)
             
-            send_file.close()
 
     def Send_File_Unit2toUnit1(self):
         self.filename2 = self.m_textCtrl_TestFile2.GetValue()
@@ -757,73 +785,27 @@ class S2E_TestTool ( wx.Frame ):
             return
         
         self.filename2_size = os.stat(self.filename2).st_size
+        file_data = ""
+        send_file = open(self.filename2,'rb')
+        for i in xrange(0,self.filename2_size,1024):
+            data = send_file.read(1024)
+            file_data += data
+        send_file.close()
         
         try:
-            send_file = open(self.filename2,'rb')
+            chunk_size = int(self.m_textCtrl_ChunkSize.GetValue())
+            send_delay = int(self.m_textCtrl_SendDelay.GetValue())/1000
             
-#             for i in range(self.filename2_size):
-#                 data = send_file.read()
-#                 self.m_Unit2_ser.write(data)
-            for i in xrange(0,self.filename2_size,1024):
-                data = send_file.read(1024)
+            for i in xrange(0,self.filename2_size,chunk_size):
+                data = file_data[i:i+chunk_size]
                 self.m_Unit2_ser.write(data)
-            
-            send_file.close()
+                time.sleep(send_delay)
 
         except Exception as e:
             s = str(e)
-            lock.acquire()
-            self.m_textCtrl_ResultUnit1.AppendText(s)
-            lock.release()
-            
-            send_file.close()
+            wx.MessageBox(s, 'Warning',wx.OK | wx.ICON_ERROR)
             
         
-#     def Send_File_Unit2toUnit1(self):
-#         self.filename2 = self.m_textCtrl_TestFile2.GetValue()
-#         if self.filename2 == '':
-#             return
-#         
-#         self.filename2_size = os.stat(self.filename2).st_size
-#         self.unit1_recv_size = 0
-#         
-#         self.m_textCtrl_ResultUnit1.AppendText("Test Start\r\n")
-#         
-#         try:
-#             send_file = open(self.filename2,'rb')
-#             recv_file = open(self.m_Unit1_recv_filename,'wb')
-#             
-#             for i in xrange(0,self.filename2_size,1024):
-#                 data = send_file.read(1024)
-#                 self.m_Unit2_ser.write(data)
-#                 recv_data = self.m_Unit1_ser.read(1024)
-#                 recv_file.write(recv_data)
-# 
-#                 self.unit1_recv_size += len(recv_data)
-#                 temp_str = "Recv size : %d/%d\r\n" % (self.unit1_recv_size,self.filename2_size)
-#                 self.m_textCtrl_ResultUnit1.AppendText(temp_str)
-#                 
-# 
-#             send_file.close()
-#             recv_file.close()
-# 
-#             result = filecmp.cmp(self.m_textCtrl_TestFile2.GetValue(), self.m_Unit1_recv_filename)
-#             message = "Received Data Length : %s\r\n" % str(os.stat(self.m_Unit1_recv_filename).st_size)
-#             self.m_textCtrl_ResultUnit1.AppendText(message)
-#             message = "Test Result(File Compare) : %s\r\n" % str(result)
-#             self.m_textCtrl_ResultUnit1.AppendText(message)
-#             
-#             if result == False:
-#                 wx.MessageBox("Test Fail", 'Warning',wx.OK | wx.ICON_ERROR)
-#                 return
-# 
-#         except Exception as e:
-#             s = str(e)
-#             self.m_textCtrl_ResultUnit2.AppendText(s)
-#             send_file.close()
-#             recv_file.close()
-        
-
 if __name__ == "__main__":
     app = wx.App(0)
     s2e_test = S2E_TestTool(None)
