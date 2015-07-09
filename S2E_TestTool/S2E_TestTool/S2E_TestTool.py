@@ -230,25 +230,44 @@ class S2E_TestTool ( wx.Frame ):
         
         sbSizer_SendOption.Add( sbSizer6, 0, wx.EXPAND, 5 )
         
-        sbSizer8 = wx.StaticBoxSizer( wx.StaticBox( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, u"Not Using File" ), wx.HORIZONTAL )
+        sbSizer8 = wx.StaticBoxSizer( wx.StaticBox( sbSizer_SendOption.GetStaticBox(), wx.ID_ANY, u"Not Using File" ), wx.VERTICAL )
+        
+        bSizer18 = wx.BoxSizer( wx.HORIZONTAL )
         
         self.m_staticText_Unit1_SendSize = wx.StaticText( sbSizer8.GetStaticBox(), wx.ID_ANY, u"Unit1 Send Size(Byte)", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText_Unit1_SendSize.Wrap( -1 )
-        sbSizer8.Add( self.m_staticText_Unit1_SendSize, 1, wx.ALL, 5 )
+        bSizer18.Add( self.m_staticText_Unit1_SendSize, 1, wx.ALL, 5 )
         
         self.m_textCtrl_Unit1_SendSize = wx.TextCtrl( sbSizer8.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_textCtrl_Unit1_SendSize.Enable( False )
         
-        sbSizer8.Add( self.m_textCtrl_Unit1_SendSize, 1, wx.ALL, 5 )
+        bSizer18.Add( self.m_textCtrl_Unit1_SendSize, 1, wx.ALL, 5 )
         
         self.m_staticText_Unit2_SendSize = wx.StaticText( sbSizer8.GetStaticBox(), wx.ID_ANY, u"Unit2 Send Size(Byte)", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText_Unit2_SendSize.Wrap( -1 )
-        sbSizer8.Add( self.m_staticText_Unit2_SendSize, 1, wx.ALL, 5 )
+        bSizer18.Add( self.m_staticText_Unit2_SendSize, 1, wx.ALL, 5 )
         
         self.m_textCtrl_Unit2_SendSize = wx.TextCtrl( sbSizer8.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_textCtrl_Unit2_SendSize.Enable( False )
         
-        sbSizer8.Add( self.m_textCtrl_Unit2_SendSize, 1, wx.ALL, 5 )
+        bSizer18.Add( self.m_textCtrl_Unit2_SendSize, 1, wx.ALL, 5 )
+        
+        
+        sbSizer8.Add( bSizer18, 1, wx.EXPAND, 5 )
+        
+        bSizer19 = wx.BoxSizer( wx.HORIZONTAL )
+        
+        self.m_staticText11 = wx.StaticText( sbSizer8.GetStaticBox(), wx.ID_ANY, u"Send Delay(byte per us)", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText11.Wrap( -1 )
+        bSizer19.Add( self.m_staticText11, 0, wx.ALL, 5 )
+        
+        self.m_textCtrl_SendDelay_Byteus = wx.TextCtrl( sbSizer8.GetStaticBox(), wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_textCtrl_SendDelay_Byteus.Enable( False )
+        
+        bSizer19.Add( self.m_textCtrl_SendDelay_Byteus, 0, wx.ALL, 5 )
+        
+        
+        sbSizer8.Add( bSizer19, 1, wx.EXPAND, 5 )
         
         
         sbSizer_SendOption.Add( sbSizer8, 0, wx.EXPAND, 5 )
@@ -363,6 +382,7 @@ class S2E_TestTool ( wx.Frame ):
         self.m_checkBox_Fullduplex.Bind( wx.EVT_CHECKBOX, self.onFullduplex )
         self.m_checkBox_Unit1toUnit2.Bind( wx.EVT_CHECKBOX, self.onUnit1toUnit2 )
         self.m_checkBox_Unit2toUnit1.Bind( wx.EVT_CHECKBOX, self.onUnit2toUnit1 )
+
         
         
         #User Code
@@ -474,6 +494,7 @@ class S2E_TestTool ( wx.Frame ):
         self.m_textCtrl_TestFile2.Enable()
         self.m_textCtrl_Unit1_SendSize.Disable()
         self.m_textCtrl_Unit2_SendSize.Disable()
+        self.m_textCtrl_SendDelay_Byteus.Disable()
         self.m_button_StartTest.Disable()
         self.m_textCtrl_ChunkSize.Enable()
         self.m_textCtrl_SendDelay.Enable()
@@ -487,6 +508,7 @@ class S2E_TestTool ( wx.Frame ):
         self.m_textCtrl_TestFile2.Disable()
         self.m_textCtrl_Unit1_SendSize.Enable()
         self.m_textCtrl_Unit2_SendSize.Enable()
+        self.m_textCtrl_SendDelay_Byteus.Enable()
         self.m_button_StartTest.Enable()
         self.m_textCtrl_ChunkSize.Disable()
         self.m_textCtrl_SendDelay.Disable()
@@ -596,9 +618,15 @@ class S2E_TestTool ( wx.Frame ):
                 else:
                     time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 100000:
+
+                    if end_cnt == 100000 :
+                        self.m_textCtrl_ResultUnit1.AppendText("Wait for remained serial data\r\n")
+                    elif end_cnt >= 200000:
                         self.m_recv1_finish = True
                         break
+        
+            message = "Test Result : %d/%d\r\n" % (self.m_unit1_recv_size,self.m_Unit2_Send_Size)
+            self.m_textCtrl_ResultUnit1.AppendText(message)
         
         elif self.m_checkBox_usingFile.GetValue() == True:
             while True:
@@ -608,22 +636,24 @@ class S2E_TestTool ( wx.Frame ):
                     lock.acquire()
                     self.m_unit1_recv_size += len(recv_data)
                     recv_file_data += recv_data
+                    lock.release()
 
                     temp_str = "Recv size : %d/%d\r\n" % (self.m_unit1_recv_size,self.filename2_size)
                     self.m_textCtrl_ResultUnit1.AppendText(temp_str)
-                    lock.release()
                 else:
                     time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 100000:
+
+                    if end_cnt == 100000 :
+                        self.m_textCtrl_ResultUnit1.AppendText("Wait for remained serial data\r\n")
+                    elif end_cnt >= 200000:
                         self.m_recv1_finish = True
                         break
             
             recv_file = open(self.m_Unit1_recv_filename,"wb")
             recv_file.write(recv_file_data)
-
-            
             recv_file.close()
+
             result = filecmp.cmp(self.m_textCtrl_TestFile2.GetValue(),self.m_Unit1_recv_filename)
             message = "Test Result(File Compare) : %s\r\n" % str(result)
             self.m_textCtrl_ResultUnit1.AppendText(message)
@@ -655,9 +685,15 @@ class S2E_TestTool ( wx.Frame ):
                 else:
                     time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 100000:
+
+                    if end_cnt == 100000 :
+                        self.m_textCtrl_ResultUnit2.AppendText("Wait for remained serial data\r\n")
+                    elif end_cnt >= 200000:
                         self.m_recv2_finish = True
                         break
+
+            message = "Test Result : %d/%d\r\n" % (self.m_unit2_recv_size,self.m_Unit1_Send_Size)
+            self.m_textCtrl_ResultUnit2.AppendText(message)
 
         elif self.m_checkBox_usingFile.GetValue() == True:
             while True:
@@ -667,14 +703,17 @@ class S2E_TestTool ( wx.Frame ):
                     lock.acquire()
                     self.m_unit2_recv_size += len(recv_data)
                     recv_file_data += recv_data
+                    lock.release()
 
                     temp_str = "Recv size : %d/%d\r\n" % (self.m_unit2_recv_size,self.filename1_size)
                     self.m_textCtrl_ResultUnit2.AppendText(temp_str)
-                    lock.release()
                 else:
                     time.sleep(0.0001)
                     end_cnt += 1
-                    if end_cnt >= 100000:
+
+                    if end_cnt == 100000 :
+                        self.m_textCtrl_ResultUnit2.AppendText("Wait for remained serial data\r\n")
+                    elif end_cnt >= 200000:
                         self.m_recv2_finish = True
                         break
 
@@ -708,10 +747,12 @@ class S2E_TestTool ( wx.Frame ):
     def Send_Ascii_Unit1toUnit2(self):
         send_data = 'A'
         self.m_Unit1_Send_Size = int(self.m_textCtrl_Unit1_SendSize.GetValue())
+        delay = float(int(self.m_textCtrl_SendDelay_Byteus.GetValue())) / float(1000000)
 
         try:
             for i in range(self.m_Unit1_Send_Size):
                 self.m_Unit1_ser.write(send_data)
+                time.sleep(delay)
                 
                 if send_data == 'z':
                     send_data = '\r'
@@ -731,10 +772,13 @@ class S2E_TestTool ( wx.Frame ):
     def Send_Ascii_Unit2toUnit1(self):
         send_data = 'A'
         self.m_Unit2_Send_Size = int(self.m_textCtrl_Unit2_SendSize.GetValue())
+        delay = float(int(self.m_textCtrl_SendDelay_Byteus.GetValue())) / float(1000000)
+
 
         try:
             for i in range(self.m_Unit2_Send_Size):
                 self.m_Unit2_ser.write(send_data)
+                time.sleep(delay)
                 
                 if send_data == 'z':
                     send_data = '\r'
@@ -768,7 +812,8 @@ class S2E_TestTool ( wx.Frame ):
         
         try:
             chunk_size = int(self.m_textCtrl_ChunkSize.GetValue())
-            send_delay = int(self.m_textCtrl_SendDelay.GetValue())/1000
+            send_delay = float(int(self.m_textCtrl_SendDelay.GetValue())) / float(1000)
+            
             for i in xrange(0,self.filename1_size,chunk_size):
                 data = file_data[i:i+chunk_size]
                 self.m_Unit1_ser.write(data)
@@ -794,7 +839,7 @@ class S2E_TestTool ( wx.Frame ):
         
         try:
             chunk_size = int(self.m_textCtrl_ChunkSize.GetValue())
-            send_delay = int(self.m_textCtrl_SendDelay.GetValue())/1000
+            send_delay = float(int(self.m_textCtrl_SendDelay.GetValue())) / float(1000)
             
             for i in xrange(0,self.filename2_size,chunk_size):
                 data = file_data[i:i+chunk_size]
